@@ -1,27 +1,28 @@
 import json
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-# Init model
+
+
 embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L6-v2"
+    model_name="intfloat/multilingual-e5-base",
+    encode_kwargs={"normalize_embeddings": True}
 )
 
-# Load as a list of dict
+
 docs = []
-with open("data/merged.jsonl", "r") as f:
+with open("data/merged.jsonl", "r", encoding="utf-8") as f:
     for line in f:
         docs.append(json.loads(line))
 
-# Create document objects
+# Convert to doc object
 documents = []
 
 for d in docs:
     metadata = {}
 
-    # add fields only if they exist
     for key in [
         "id", "source", "url", "name", "sku",
         "category", "subcategory",
@@ -31,25 +32,32 @@ for d in docs:
         if key in d and d[key] is not None:
             metadata[key] = d[key]
 
-    doc = Document(
-        page_content=d["text"],
-        metadata=metadata
+    documents.append(
+        Document(
+            page_content=d["text"],
+            metadata=metadata
+        )
     )
 
-    documents.append(doc)
+# Chunking
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=800,
+    chunk_overlap=150,
+    separators=["\n\n", "\n", ".", " ", ""]
+)
 
-# Create a vector db
+chunked_docs = text_splitter.split_documents(documents)
+
+print(f"Original docs: {len(documents)}")
+print(f"Chunked docs: {len(chunked_docs)}")
+
+
+# Creating vector DB
 vectorstore = Chroma.from_documents(
-    documents=documents,
+    documents=chunked_docs,
     embedding=embeddings,
     persist_directory="./chroma_db"
 )
 
-# Query the vector db
-results = vectorstore.similarity_search(
-    "Чем занимается компания Центр Красок №1?",
-    k=5
-)
 
-for r in results:
-    print(r)
+print("Vector DB created with chunking and saved to ./chroma_db")

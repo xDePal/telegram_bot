@@ -47,3 +47,4 @@ data/
 .gitignore
 .python-version
 .ipynb_checkpoints
+chroma_db/

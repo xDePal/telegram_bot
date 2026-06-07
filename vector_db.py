@@ -24,12 +24,16 @@ print(f"Total characters: {len(raw_text)}")
 
 # Chunking
 text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=800,
-    chunk_overlap=150,
+    chunk_size=1000,
+    chunk_overlap=200,
     separators=["\n\n", "\n", ".", " ", ""]
 )
 
 chunked_docs = text_splitter.split_documents(documents)
+
+# Add passage prefix to each chunk
+for doc in chunked_docs:
+    doc.page_content = "текст: " + doc.page_content
 
 print(f"Original docs: {len(documents)}")
 print(f"Chunked docs: {len(chunked_docs)}")

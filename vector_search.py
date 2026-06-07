@@ -3,7 +3,8 @@ from langchain_chroma import Chroma
 
 # Same embedding model
 embeddings = HuggingFaceEmbeddings(
-    model_name="intfloat/multilingual-e5-base"
+    model_name="intfloat/multilingual-e5-base",
+    model_kwargs={"device": "cuda"}
 )
 
 # Load existing DB
@@ -13,14 +14,13 @@ vectorstore = Chroma(
 )
 
 # Query
-query = "чем занимается эта компания?"
+query = "какие есть вакансии?"
 
 results = vectorstore.similarity_search(
     query,
-    k=3
+    k=5
 )
 
 for i, doc in enumerate(results, 1):
     print(f"\n--- Result {i} ---")
     print(doc.page_content)
-    print(doc.metadata)
